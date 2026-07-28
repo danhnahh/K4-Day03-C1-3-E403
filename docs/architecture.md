@@ -1,175 +1,175 @@
-# 🏗️ System Architecture — AI Hospital Appointment & Medical Specialty Consultation Agent
+# 🏗️ Kiến Trúc Hệ Thống — AI Agent Tư Vấn Chuyên Khoa & Đặt Lịch Khám Bệnh
 
-This document analyzes the architecture of the code actually present in this repository (`src/`, `config/`, `docs/`). It is grounded strictly in what is implemented — sections that describe target/future behavior (e.g. a real booking transaction, SMS notifications, live human hand-off) are explicitly marked **not implemented**, since the current codebase is a lab/demo ReAct agent, not a production hospital system.
+Tài liệu này phân tích kiến trúc dựa trên code thực tế đang có trong repo (`src/`, `config/`, `docs/`). Nội dung bám sát nghiêm ngặt những gì đã được cài đặt — các phần mô tả hành vi mục tiêu/tương lai (ví dụ: giao dịch đặt lịch thật, gửi SMS, chuyển tiếp người thật trực tiếp) đều được ghi chú rõ là **chưa triển khai**, vì codebase hiện tại là một ReAct agent phục vụ bài lab/demo, không phải hệ thống bệnh viện sản xuất thật.
 
 ---
 
-## 1. Product Goal
+## 1. Mục tiêu sản phẩm (Product Goal)
 
-Give a hotline caller who describes symptoms in free-form natural language (Vietnamese) a safe, tool-grounded path to:
+Đưa người gọi tổng đài mô tả triệu chứng bằng ngôn ngữ tự nhiên (tiếng Việt) đi theo một lộ trình an toàn, có căn cứ từ tool:
 
-1. Be screened for emergency warning signs first, before anything else.
-2. Get routed to the correct hospital specialty (`Khoa`) based on the symptom description.
-3. See real doctor names and open time slots for that specialty/date.
-4. Have their identity checked against a patient record before any appointment is finalized.
+1. Được sàng lọc dấu hiệu cấp cứu trước tiên, trước bất kỳ điều gì khác.
+2. Được định tuyến đến đúng chuyên khoa bệnh viện (`Khoa`) dựa trên mô tả triệu chứng.
+3. Thấy được tên bác sĩ thật và khung giờ trống cho chuyên khoa/ngày đó.
+4. Được đối chiếu danh tính với hồ sơ bệnh nhân trước khi bất kỳ lịch hẹn nào được chốt.
 
-The project's secondary goal (visible in `README.md`'s lab framing) is pedagogical: to demonstrate, side by side, why a plain LLM chatbot (Level 2) is insufficient for this problem and a ReAct agent (Level 3) is required.
+Mục tiêu phụ của dự án (thể hiện qua cách trình bày bài lab trong `README.md`) mang tính sư phạm: minh họa song song vì sao một chatbot LLM thuần túy (Cấp 2) không đủ để giải quyết bài toán này và cần đến một ReAct agent (Cấp 3).
 
-## 2. Main Features (as implemented)
+## 2. Tính năng chính (theo những gì đã cài đặt)
 
-| Feature | Where |
+| Tính năng | Nằm ở đâu |
 |---|---|
-| Emergency keyword screening | `detect_emergency` in `src/tools.py` |
-| Symptom → specialty routing | `map_symptom_to_specialty` in `src/tools.py` |
-| Doctor/slot lookup by specialty + date | `lookup_doctor_schedule` in `src/tools.py` |
-| Patient identity check (phone/CCCD/BHYT) | `verify_patient_identity` in `src/tools.py` |
-| ReAct Thought→Action→Observation loop | `run_react_agent` in `src/app.py` |
-| Baseline (tool-less) chatbot for comparison | `run_baseline_chatbot` in `src/app.py` |
-| Pre-loop guardrails (injection, diagnosis request, greeting) | `run_react_agent` in `src/app.py` |
-| Loop-limit guardrail (`MAX_ITERATIONS`) | `src/prompts.py` + `src/app.py` |
-| Multi-provider LLM adapter (Gemini/OpenAI/Anthropic/OpenRouter/Mock) | `src/providers.py` |
-| Offline deterministic simulation of the ReAct trace | `_build_fallback_step` in `src/app.py`, used automatically by `MockProvider` |
+| Sàng lọc từ khóa cấp cứu | `detect_emergency` trong `src/tools.py` |
+| Định tuyến triệu chứng → chuyên khoa | `map_symptom_to_specialty` trong `src/tools.py` |
+| Tra cứu bác sĩ/khung giờ theo chuyên khoa + ngày | `lookup_doctor_schedule` trong `src/tools.py` |
+| Kiểm tra danh tính bệnh nhân (phone/CCCD/BHYT) | `verify_patient_identity` trong `src/tools.py` |
+| Vòng lặp ReAct Thought→Action→Observation | `run_react_agent` trong `src/app.py` |
+| Chatbot nền (không tool) để so sánh | `run_baseline_chatbot` trong `src/app.py` |
+| Guardrail trước vòng lặp (chống injection, yêu cầu chẩn đoán, lời chào) | `run_react_agent` trong `src/app.py` |
+| Guardrail giới hạn vòng lặp (`MAX_ITERATIONS`) | `src/prompts.py` + `src/app.py` |
+| Adapter LLM đa nhà cung cấp (Gemini/OpenAI/Anthropic/OpenRouter/Mock) | `src/providers.py` |
+| Mô phỏng offline xác định cho trace ReAct | `_build_fallback_step` trong `src/app.py`, được `MockProvider` tự động sử dụng |
 
-**Not implemented** (do not exist as code, only as text the agent produces or as target behavior described in `config/test_cases.json`): an actual booking/reservation transaction, an SMS/Zalo/email notification sender, a live human-agent hand-off channel, a real Hospital Information System integration, cancellation/reschedule logic, and multi-patient (book-for-family-member) identity linking. Where the agent currently says "please provide your phone/CCCD/BHYT to confirm" or "call 115", that is the end of the automated flow — no downstream system is actually called.
+**Chưa triển khai** (không tồn tại dưới dạng code, chỉ là văn bản agent sinh ra hoặc hành vi mục tiêu được mô tả trong `config/test_cases.json`): một giao dịch đặt lịch/giữ chỗ thật, một bộ gửi thông báo SMS/Zalo/email, một kênh chuyển tiếp trực tiếp sang nhân viên thật, tích hợp Hệ thống Thông tin Bệnh viện (HIS) thật, logic hủy/đổi lịch, và liên kết danh tính nhiều bệnh nhân (đặt hộ người thân). Khi agent hiện tại nói "vui lòng cung cấp SĐT/CCCD/BHYT để xác nhận" hoặc "gọi 115", đó là điểm kết thúc của luồng tự động — không có hệ thống downstream nào thực sự được gọi.
 
-## 3. User Journey (current implementation)
+## 3. Hành trình người dùng (theo cài đặt hiện tại)
 
-The only entry point today is `src/app.py`'s `__main__` block, which loads `config/test_cases.json` and runs each question through both `run_baseline_chatbot` and `run_react_agent`, printing the trace to the console. There is no web/API/chat-widget front end yet — "Chat Interface" in the diagrams below stands for this console runner (or, conceptually, whatever channel the hotline would use in production).
+Điểm vào duy nhất hiện nay là khối `__main__` của `src/app.py`, nơi nạp `config/test_cases.json` và chạy từng câu hỏi qua cả `run_baseline_chatbot` lẫn `run_react_agent`, in trace ra console. Chưa có giao diện web/API/chat-widget nào — "Giao diện chat" trong các sơ đồ bên dưới đại diện cho console runner này (hoặc, về mặt khái niệm, bất kỳ kênh nào tổng đài sẽ dùng trong thực tế).
 
-1. A question string enters `run_react_agent`.
-2. It is normalized and checked against three hardcoded guardrail term lists (injection, diagnosis/prescription request, greeting). A match short-circuits immediately with a canned `Final Answer` — no LLM or tool call happens.
-3. Otherwise the ReAct loop begins (see §9 and Diagram 2).
-4. `detect_emergency` is always the first tool called when there are no prior observations.
-5. If not an emergency, the agent maps symptom → specialty, looks up schedule, and asks the user to pick a slot and supply an identifier.
-6. `verify_patient_identity` checks the format and looks the identifier up in `MOCK_PATIENTS`.
-7. The loop ends with a `Final Answer` (or, after `MAX_ITERATIONS` = 8 steps, with a printed guardrail message) — nothing is persisted or booked.
+1. Một chuỗi câu hỏi đi vào `run_react_agent`.
+2. Câu hỏi được chuẩn hóa và đối chiếu với ba danh sách từ khóa guardrail cứng (injection, yêu cầu chẩn đoán/kê đơn, lời chào). Nếu khớp, luồng ngắt ngay lập tức với một `Final Answer` dựng sẵn — không có lệnh gọi LLM hay tool nào.
+3. Nếu không, vòng lặp ReAct bắt đầu (xem mục 9 và Sơ đồ 2).
+4. `detect_emergency` luôn là tool được gọi đầu tiên khi chưa có observation nào trước đó.
+5. Nếu không phải cấp cứu, agent ánh xạ triệu chứng → chuyên khoa, tra lịch, và yêu cầu người dùng chọn khung giờ cùng cung cấp một identifier.
+6. `verify_patient_identity` kiểm tra định dạng và tra cứu identifier trong `MOCK_PATIENTS`.
+7. Vòng lặp kết thúc bằng một `Final Answer` (hoặc, sau `MAX_ITERATIONS` = 8 bước, bằng một thông báo guardrail được in ra) — không có gì được lưu trữ hay đặt lịch thật.
 
-## 4. AI Agent Responsibilities
+## 4. Trách nhiệm của AI Agent
 
-The "agent" is the orchestration logic in `run_react_agent` (`src/app.py`), not the LLM itself:
+"Agent" ở đây là logic điều phối trong `run_react_agent` (`src/app.py`), không phải bản thân LLM:
 
-- Runs the guardrail pre-filters before allowing any reasoning to happen.
-- Drives the Thought→Action→Observation loop for up to `MAX_ITERATIONS` steps.
-- Parses the model's `Action: tool_name[args]` line with a strict regex (`_parse_action`) and rejects anything that doesn't match.
-- Validates that a real provider's output actually looks like a ReAct step (`_looks_like_react_response`); if not, it discards the LLM output and substitutes a deterministic step from `_build_fallback_step`, so a malformed generation can never break the loop.
-- Dispatches the parsed tool call to `AVAILABLE_TOOLS` and feeds the returned string back as the next `Observation`.
-- Terminates the loop as soon as `Final Answer:` appears, or after the iteration cap is hit.
+- Chạy các bộ lọc guardrail trước khi cho phép bất kỳ suy luận nào diễn ra.
+- Điều khiển vòng lặp Thought→Action→Observation tối đa `MAX_ITERATIONS` bước.
+- Phân tích dòng `Action: tool_name[args]` của model bằng regex nghiêm ngặt (`_parse_action`) và từ chối bất cứ thứ gì không khớp.
+- Kiểm tra xem output của một provider thật có thực sự giống một bước ReAct hợp lệ hay không (`_looks_like_react_response`); nếu không, bỏ output của LLM và thay bằng một bước xác định từ `_build_fallback_step`, để một lượt sinh sai định dạng không bao giờ làm hỏng vòng lặp.
+- Điều phối lệnh gọi tool đã phân tích đến `AVAILABLE_TOOLS` và đưa chuỗi trả về làm `Observation` tiếp theo.
+- Kết thúc vòng lặp ngay khi xuất hiện `Final Answer:`, hoặc sau khi đạt giới hạn số vòng lặp.
 
-## 5. LLM Responsibilities
+## 5. Trách nhiệm của LLM
 
-When a real provider (Gemini/OpenAI/Anthropic/OpenRouter) is configured via `LLM_PROVIDER` in `.env`:
+Khi một provider thật (Gemini/OpenAI/Anthropic/OpenRouter) được cấu hình qua `LLM_PROVIDER` trong `.env`:
 
-- Read the `REACT_SYSTEM_PROMPT` (`src/prompts.py`), which enumerates the 4 available tools, their call syntax, and the mandatory rules (call `detect_emergency` first, never fabricate a schedule, never diagnose/prescribe, escalate on `EMERGENCY=TRUE`, restrict `id_type` to `phone|cccd|bhyt`).
-- On each turn, produce **exactly one** `Thought` + `Action` pair, or a `Thought` + `Final Answer` pair — never both, never an invented `Observation`.
-- Decide, from the accumulated observations, what the single next step should be (which tool, which arguments, or whether enough evidence exists to answer).
+- Đọc `REACT_SYSTEM_PROMPT` (`src/prompts.py`), liệt kê 4 tool khả dụng, cú pháp gọi của chúng, và các luật bắt buộc (gọi `detect_emergency` trước, không bao giờ tự bịa lịch, không bao giờ chẩn đoán/kê đơn, chuyển hướng cấp cứu khi `EMERGENCY=TRUE`, giới hạn `id_type` chỉ trong `phone|cccd|bhyt`).
+- Ở mỗi lượt, chỉ sinh ra **đúng một** cặp `Thought` + `Action`, hoặc một cặp `Thought` + `Final Answer` — không bao giờ cả hai, không bao giờ tự bịa một `Observation`.
+- Quyết định, dựa trên các observation đã tích lũy, bước tiếp theo duy nhất nên là gì (tool nào, tham số nào, hay đã đủ bằng chứng để trả lời).
 
-When `LLM_PROVIDER=mock` (the default, and what actually runs `config/test_cases.json` offline), the LLM is replaced entirely by `MockProvider`, and every "reasoning" step instead comes from the deterministic `_build_fallback_step` function — this guarantees the lab's test cases are reproducible without any API key.
+Khi `LLM_PROVIDER=mock` (giá trị mặc định, và là thứ thực sự chạy `config/test_cases.json` ở chế độ offline), LLM được thay thế hoàn toàn bằng `MockProvider`, và mọi bước "suy luận" thay vào đó đến từ hàm xác định `_build_fallback_step` — điều này đảm bảo bộ test case của bài lab luôn cho kết quả lặp lại được mà không cần bất kỳ API key nào.
 
-## 6. Tool Responsibilities
+## 6. Trách nhiệm của Tool
 
-See the full table in §7 of `README.md`. In short, each tool in `src/tools.py` is a pure function that validates its own arguments, looks up static data from `config/mock_data.py`, and returns a plain string — either a `LOI: ...` (error) message or a result description. Tools never call each other and never touch the LLM.
+Xem bảng đầy đủ ở mục 7 của `README.md`. Tóm lại, mỗi tool trong `src/tools.py` là một hàm thuần (pure function) tự kiểm tra tham số của chính nó, tra cứu dữ liệu tĩnh từ `config/mock_data.py`, và trả về một chuỗi văn bản — hoặc thông báo lỗi `LOI: ...`, hoặc mô tả kết quả. Các tool không bao giờ gọi lẫn nhau và không bao giờ chạm vào LLM.
 
-## 7. Guardrail Responsibilities
+## 7. Trách nhiệm của Guardrail
 
-Guardrails exist at three separate layers, and none of them depend on the LLM to police itself:
+Guardrail tồn tại ở ba tầng riêng biệt, và không tầng nào phụ thuộc vào việc LLM "tự giác":
 
-1. **Pre-loop hard blocks** (`run_react_agent`, before the loop even starts): substring lists for prompt-injection / other-patient-data requests, medical diagnosis/prescription requests, and greetings. These fire regardless of which LLM provider is configured.
-2. **In-loop deterministic behavior**: `detect_emergency` is always the first action when there are no observations yet; an `EMERGENCY=TRUE` observation always ends the loop with an escalation message instead of continuing to specialty routing.
-3. **Structural/format guardrails**: `_parse_action`'s regex rejects anything not shaped like `Action: tool_name[args]`; `_looks_like_react_response` rejects free-text LLM replies that skip the required labels and replaces them with a deterministic fallback step; `MAX_ITERATIONS = 8` caps the loop and prints an explicit guardrail message if exhausted.
-4. **Data-privacy guardrail**: `_mask_identifier` in `src/tools.py` masks all but the last 4 characters of any phone/CCCD/BHYT number before it is echoed back in an `Observation`.
+1. **Chặn cứng trước vòng lặp** (`run_react_agent`, trước khi vòng lặp bắt đầu): danh sách từ khóa con cho yêu cầu prompt-injection / dữ liệu bệnh nhân khác, yêu cầu chẩn đoán/kê đơn thuốc, và lời chào. Các chặn này kích hoạt bất kể LLM provider nào đang được cấu hình.
+2. **Hành vi xác định trong vòng lặp**: `detect_emergency` luôn là action đầu tiên khi chưa có observation nào; một observation `EMERGENCY=TRUE` luôn kết thúc vòng lặp bằng thông báo chuyển hướng cấp cứu thay vì tiếp tục định tuyến chuyên khoa.
+3. **Guardrail cấu trúc/định dạng**: regex của `_parse_action` từ chối bất cứ thứ gì không có dạng `Action: tool_name[args]`; `_looks_like_react_response` từ chối các phản hồi văn bản tự do của LLM bỏ qua các nhãn bắt buộc và thay bằng một bước fallback xác định; `MAX_ITERATIONS = 8` giới hạn vòng lặp và in ra thông báo guardrail rõ ràng nếu bị vượt quá.
+4. **Guardrail bảo vệ dữ liệu riêng tư**: `_mask_identifier` trong `src/tools.py` che toàn bộ số điện thoại/CCCD/BHYT trừ 4 ký tự cuối trước khi hiển thị lại trong một `Observation`.
 
-## 8. External Systems
+## 8. Hệ thống bên ngoài (External Systems)
 
-Today there are **no external systems** wired in beyond the LLM provider APIs themselves:
+Hiện tại **không có hệ thống bên ngoài** nào được tích hợp ngoài chính các API của LLM provider:
 
-- `config/mock_data.py` is an in-memory, static stand-in for a real Hospital Information System (doctor directory, schedule, patient roster, symptom/emergency keyword tables). It is loaded as a plain Python import — there is no database, no network call, no persistence.
-- `src/providers.py` calls out to Gemini / OpenAI / Anthropic / OpenRouter HTTP APIs (or none, in Mock mode).
-- There is no notification gateway (SMS/Zalo/email), no real booking database, and no telephony/hotline integration.
+- `config/mock_data.py` là một cấu trúc in-memory, tĩnh, đóng vai trò thay thế tạm cho một Hệ thống Thông tin Bệnh viện thật (danh bạ bác sĩ, lịch khám, danh sách bệnh nhân, bảng từ khóa triệu chứng/cấp cứu). Nó được nạp như một import Python thông thường — không có database, không có lệnh gọi mạng, không có lưu trữ bền vững.
+- `src/providers.py` gọi ra các API HTTP của Gemini / OpenAI / Anthropic / OpenRouter (hoặc không gọi gì cả, ở chế độ Mock).
+- Chưa có cổng gửi thông báo (SMS/Zalo/email), chưa có database đặt lịch thật, và chưa có tích hợp tổng đài/viễn thông.
 
-## 9. Data Flow & Request Lifecycle
+## 9. Luồng dữ liệu & Vòng đời Request (Data Flow & Request Lifecycle)
 
 ```
-question string
+chuỗi câu hỏi
   → _normalize / _plain (src/app.py)
-  → pre-loop guardrail term match?  → yes → Final Answer (refusal/redirect) → END
-  → no
-  → loop (1..MAX_ITERATIONS):
-       provider.generate(REACT_SYSTEM_PROMPT, history)   [or _build_fallback_step if MockProvider / malformed output]
-       → "Final Answer:" present?  → yes → print → END
+  → khớp từ khóa guardrail trước vòng lặp?  → có → Final Answer (từ chối/điều hướng) → KẾT THÚC
+  → không
+  → vòng lặp (1..MAX_ITERATIONS):
+       provider.generate(REACT_SYSTEM_PROMPT, history)   [hoặc _build_fallback_step nếu là MockProvider / output sai định dạng]
+       → có "Final Answer:"?  → có → in ra → KẾT THÚC
        → _parse_action → (tool_name, args)
-       → no tool_name parsed → Final Answer (generic failure) → END
-       → AVAILABLE_TOOLS[tool_name](*args)  [tools.py reads config/mock_data.py]
-       → Observation string appended to history, loop continues
-  → loop exhausted without Final Answer → print "Guardrail: đã đạt giới hạn tối đa N bước" → END
+       → không phân tích được tool_name → Final Answer (lỗi chung) → KẾT THÚC
+       → AVAILABLE_TOOLS[tool_name](*args)  [tools.py đọc config/mock_data.py]
+       → chuỗi Observation được thêm vào lịch sử, vòng lặp tiếp tục
+  → hết vòng lặp mà chưa có Final Answer → in "Guardrail: đã đạt giới hạn tối đa N bước" → KẾT THÚC
 ```
 
-## 10. Why This Project Uses a ReAct Agent Architecture
+## 10. Vì sao dự án này dùng kiến trúc ReAct Agent
 
-`docs/trace_eval.md` scores the problem 17/20 on the Agentic Fit matrix, and the code backs that up structurally:
+`docs/trace_eval.md` chấm bài toán này 17/20 trên ma trận Agentic Fit, và code củng cố điều đó về mặt cấu trúc:
 
-- **Multi-step reasoning is mandatory, not optional.** A correct answer requires chaining emergency screening → specialty mapping → schedule lookup → identity verification, where each step's *input* depends on the *previous step's Observation*. A single LLM completion cannot do this because it has no way to look up real doctor names, real slots, or a real patient record — it can only guess, and guessing about medical routing/scheduling is the exact failure mode this project guards against (see `map_symptom_to_specialty`'s and `lookup_doctor_schedule`'s explicit "day chi la goi y, khong thay the chan doan bac si" / "khong duoc tu bia lich" language and the system prompt's "Không được tự bịa lịch nếu chưa gọi tool này").
-- **Tool grounding is a safety requirement, not a convenience.** Because the domain is healthcare, hallucinated schedules or a missed emergency signal have real-world consequences. A ReAct loop forces every factual claim (specialty, schedule, identity) to originate from a deterministic tool call whose output the orchestrator — not the LLM — appends to the transcript.
-- **The branching is dynamic and content-dependent.** Whether the very next action is "ask for more detail", "call `lookup_doctor_schedule`", or "escalate to 115" depends entirely on the text of the previous `Observation` — this is exactly the `Thought → Action → Observation → Thought → ...` pattern ReAct was designed for, and is why the baseline chatbot (`run_baseline_chatbot`, no tools) is kept in the codebase side by side as a deliberate negative example.
-- **Guardrails need a place to intercept.** A single-shot chatbot completion has no intermediate point to insert a hard rule; a loop with discrete steps gives the orchestrator a place to check each `Observation` for `EMERGENCY=TRUE`, cap iterations, and validate the output format before it's ever shown to the user.
+- **Suy luận nhiều bước là bắt buộc, không phải tùy chọn.** Một câu trả lời đúng đòi hỏi phải nối chuỗi sàng lọc cấp cứu → ánh xạ chuyên khoa → tra lịch → xác minh danh tính, trong đó *đầu vào* của mỗi bước phụ thuộc vào *Observation của bước trước*. Một lượt sinh văn bản LLM đơn lẻ không thể làm được điều này vì nó không có cách nào để tra cứu tên bác sĩ thật, khung giờ thật, hay hồ sơ bệnh nhân thật — nó chỉ có thể đoán, và việc đoán mò về định tuyến/lịch khám y tế chính là kiểu thất bại mà dự án này đang phòng ngừa (xem ngôn ngữ tường minh trong `map_symptom_to_specialty` và `lookup_doctor_schedule`: "day chi la goi y, khong thay the chan doan bac si" / "khong duoc tu bia lich", và trong system prompt: "Không được tự bịa lịch nếu chưa gọi tool này").
+- **Căn cứ vào tool là yêu cầu an toàn, không phải sự tiện lợi.** Vì lĩnh vực này là y tế, một lịch khám bị ảo giác hoặc một dấu hiệu cấp cứu bị bỏ sót đều có hậu quả thực tế. Vòng lặp ReAct buộc mọi khẳng định mang tính sự kiện (chuyên khoa, lịch khám, danh tính) phải bắt nguồn từ một lệnh gọi tool xác định, mà orchestrator — chứ không phải LLM — là bên thêm kết quả đó vào transcript.
+- **Việc rẽ nhánh mang tính động và phụ thuộc nội dung.** Bước hành động tiếp theo là "hỏi thêm chi tiết", "gọi `lookup_doctor_schedule`", hay "chuyển hướng gọi 115" hoàn toàn phụ thuộc vào nội dung văn bản của `Observation` trước đó — đây chính xác là mẫu hình `Thought → Action → Observation → Thought → ...` mà ReAct được thiết kế để giải quyết, và cũng là lý do chatbot nền (`run_baseline_chatbot`, không có tool) được giữ lại trong codebase như một ví dụ đối chứng có chủ đích.
+- **Guardrail cần một chỗ để can thiệp.** Một lượt sinh chatbot một-lần-duy-nhất không có điểm trung gian nào để chèn một luật cứng; một vòng lặp với các bước rời rạc cho orchestrator một chỗ để kiểm tra mỗi `Observation` xem có `EMERGENCY=TRUE` hay không, giới hạn số vòng lặp, và xác thực định dạng output trước khi nó được hiển thị cho người dùng.
 
 ---
 
-## Diagram 1 — Overall System Architecture
+## Sơ đồ 1 — Kiến trúc hệ thống tổng thể
 
 ```mermaid
 flowchart TD
-    U[User / Hotline Caller]
-    UI["Chat Interface<br/>(today: console runner in src/app.py __main__,<br/>reads config/test_cases.json)"]
+    U[Người dùng / Người gọi tổng đài]
+    UI["Giao diện chat<br/>(hiện tại: console runner trong src/app.py __main__,<br/>đọc config/test_cases.json)"]
     AGENT["AI Agent Orchestrator<br/>run_react_agent() — src/app.py"]
-    GUARD1["Guardrail: Pre-loop filters<br/>(injection / diagnosis-request / greeting)<br/>src/app.py"]
+    GUARD1["Guardrail: Lọc trước vòng lặp<br/>(chống injection / yêu cầu chẩn đoán / lời chào)<br/>src/app.py"]
     LLM["LLM<br/>Gemini / OpenAI / Anthropic / OpenRouter / Mock<br/>src/providers.py"]
-    GUARD2["Guardrail: Format & Loop-limit<br/>_parse_action, _looks_like_react_response,<br/>MAX_ITERATIONS — src/prompts.py"]
-    TOOLS["Tool Layer<br/>detect_emergency, map_symptom_to_specialty,<br/>lookup_doctor_schedule, verify_patient_identity<br/>src/tools.py"]
-    HIS[("Mock Hospital Data<br/>(in-memory, config/mock_data.py)<br/>stands in for a real HIS — not yet integrated")]
-    RESP[Final Response]
+    GUARD2["Guardrail: Định dạng & Giới hạn vòng lặp<br/>_parse_action, _looks_like_react_response,<br/>MAX_ITERATIONS — src/prompts.py"]
+    TOOLS["Tầng Tool<br/>detect_emergency, map_symptom_to_specialty,<br/>lookup_doctor_schedule, verify_patient_identity<br/>src/tools.py"]
+    HIS[("Dữ liệu bệnh viện giả lập<br/>(in-memory, config/mock_data.py)<br/>thay thế tạm cho HIS thật — chưa tích hợp")]
+    RESP[Phản hồi cuối cùng]
 
     U --> UI --> AGENT
     AGENT --> GUARD1
-    GUARD1 -- "blocked term matched" --> RESP
-    GUARD1 -- "passes" --> LLM
+    GUARD1 -- "khớp từ khóa bị chặn" --> RESP
+    GUARD1 -- "hợp lệ" --> LLM
     LLM --> GUARD2
-    GUARD2 -- "invalid format" --> LLM
-    GUARD2 -- "valid Action" --> TOOLS
+    GUARD2 -- "sai định dạng" --> LLM
+    GUARD2 -- "Action hợp lệ" --> TOOLS
     TOOLS --> HIS
     HIS --> TOOLS
     TOOLS -- "Observation" --> AGENT
-    AGENT -- "more steps needed" --> LLM
-    AGENT -- "Final Answer or MAX_ITERATIONS reached" --> RESP
+    AGENT -- "cần thêm bước" --> LLM
+    AGENT -- "Final Answer hoặc đạt MAX_ITERATIONS" --> RESP
     RESP --> U
 ```
 
 ---
 
-## Diagram 2 — ReAct Execution Flow
+## Sơ đồ 2 — Luồng thực thi ReAct
 
 ```mermaid
 flowchart TD
-    Q[User Question] --> PRE{Pre-loop guardrail match?}
-    PRE -- "Prompt Injection<br/>terms detected" --> ESC1["Final Answer: refuse —<br/>'cannot share other patients' data'"]
-    PRE -- "Medical Diagnosis /<br/>Prescription request" --> ESC2["Final Answer: refuse —<br/>'cannot diagnose or prescribe'"]
-    PRE -- "Greeting" --> ESC3["Final Answer: canned<br/>capability intro"]
-    PRE -- "none matched" --> T1[Thought]
+    Q[Câu hỏi người dùng] --> PRE{Khớp guardrail<br/>trước vòng lặp?}
+    PRE -- "Phát hiện từ khóa<br/>Prompt Injection" --> ESC1["Final Answer: từ chối —<br/>'không thể cung cấp dữ liệu bệnh nhân khác'"]
+    PRE -- "Yêu cầu chẩn đoán /<br/>kê đơn thuốc" --> ESC2["Final Answer: từ chối —<br/>'không thể chẩn đoán hoặc kê đơn'"]
+    PRE -- "Lời chào" --> ESC3["Final Answer: giới thiệu<br/>chức năng có sẵn"]
+    PRE -- "không khớp" --> T1[Thought]
 
-    T1 --> A1[Action: choose tool]
-    A1 --> TL[Tool executes]
+    T1 --> A1[Action: chọn tool]
+    A1 --> TL[Tool thực thi]
     TL --> O1[Observation]
 
-    O1 --> CHK{Observation contains<br/>EMERGENCY=TRUE?}
-    CHK -- "yes" --> ESCE["Final Answer: Emergency Escalation —<br/>advise calling 115 / nearest ER<br/>(no live human hand-off tool implemented)"]
-    CHK -- "no" --> CHK2{Observation is an<br/>error 'LOI: ...'?<br/>e.g. identity verification failed}
-    CHK2 -- "yes" --> ESCV["Final Answer: relay error,<br/>ask user to correct/retry"]
-    CHK2 -- "no" --> CHK3{Model emitted<br/>Final Answer?}
-    CHK3 -- "yes" --> DONE[Final Answer to user]
-    CHK3 -- "no" --> LIM{Step < MAX_ITERATIONS?}
-    LIM -- "yes" --> T2[Next Thought] --> A2[Next Action] --> TL2[Tool executes] --> O2[Next Observation] --> CHK
-    LIM -- "no" --> GLIM["Guardrail: max iterations reached<br/>(MAX_ITERATIONS = 8)"]
+    O1 --> CHK{Observation có<br/>chứa EMERGENCY=TRUE?}
+    CHK -- "có" --> ESCE["Final Answer: Chuyển hướng cấp cứu —<br/>khuyến cáo gọi 115 / đến cấp cứu gần nhất<br/>(chưa có tool chuyển tiếp người thật)"]
+    CHK -- "không" --> CHK2{Observation là<br/>lỗi 'LOI: ...'?<br/>ví dụ xác minh danh tính thất bại}
+    CHK2 -- "có" --> ESCV["Final Answer: truyền lại lỗi,<br/>yêu cầu người dùng sửa/thử lại"]
+    CHK2 -- "không" --> CHK3{Model đã sinh<br/>Final Answer?}
+    CHK3 -- "có" --> DONE[Final Answer cho người dùng]
+    CHK3 -- "chưa" --> LIM{Bước < MAX_ITERATIONS?}
+    LIM -- "có" --> T2[Thought tiếp theo] --> A2[Action tiếp theo] --> TL2[Tool thực thi] --> O2[Observation tiếp theo] --> CHK
+    LIM -- "không" --> GLIM["Guardrail: đã đạt giới hạn vòng lặp<br/>(MAX_ITERATIONS = 8)"]
 
-    ESC1 --> END[End]
+    ESC1 --> END[Kết thúc]
     ESC2 --> END
     ESC3 --> END
     ESCE --> END
@@ -180,7 +180,7 @@ flowchart TD
 
 ---
 
-## Diagram 3 — Tool Interaction Diagram
+## Sơ đồ 3 — Sơ đồ tương tác với Tool
 
 ```mermaid
 sequenceDiagram
@@ -190,34 +190,34 @@ sequenceDiagram
     participant DS as lookup_doctor_schedule
     participant IV as verify_patient_identity
     participant Data as config/mock_data.py
-    participant BE as Booking Engine (not implemented)
-    participant NS as Notification Service (not implemented)
-    participant HE as Human Escalation (not implemented)
+    participant BE as Booking Engine (chưa triển khai)
+    participant NS as Notification Service (chưa triển khai)
+    participant HE as Human Escalation (chưa triển khai)
 
     Agent->>ED: detect_emergency(symptom)
-    ED->>Data: match against EMERGENCY_KEYWORDS
-    Data-->>ED: matched keywords (if any)
+    ED->>Data: đối chiếu EMERGENCY_KEYWORDS
+    Data-->>ED: từ khóa khớp (nếu có)
     ED-->>Agent: "EMERGENCY=TRUE/FALSE | ..."
 
     alt EMERGENCY=TRUE
-        Agent--xHE: (conceptual only — Final Answer text tells user to call 115)
+        Agent--xHE: (chỉ mang tính khái niệm — Final Answer chỉ khuyên gọi 115)
     else EMERGENCY=FALSE
         Agent->>SM: map_symptom_to_specialty(symptom)
-        SM->>Data: match against SYMPTOM_SPECIALTY_MAP
-        Data-->>SM: best-matching specialty
-        SM-->>Agent: "Chuyen khoa goi y: <specialty>"
+        SM->>Data: đối chiếu SYMPTOM_SPECIALTY_MAP
+        Data-->>SM: chuyên khoa phù hợp nhất
+        SM-->>Agent: "Chuyen khoa goi y: <chuyên khoa>"
 
         Agent->>DS: lookup_doctor_schedule(specialty, date)
-        DS->>Data: read MOCK_DOCTOR_SCHEDULE
-        Data-->>DS: doctors + open slots
-        DS-->>Agent: schedule text or "LOI: ..."
+        DS->>Data: đọc MOCK_DOCTOR_SCHEDULE
+        Data-->>DS: bác sĩ + khung giờ trống
+        DS-->>Agent: nội dung lịch hoặc "LOI: ..."
 
         Agent->>IV: verify_patient_identity(identifier, id_type)
-        IV->>Data: read MOCK_PATIENTS
-        Data-->>IV: patient record (if found)
-        IV-->>Agent: "Xac minh thanh cong ..." or "LOI: ..." (identifier masked)
+        IV->>Data: đọc MOCK_PATIENTS
+        Data-->>IV: hồ sơ bệnh nhân (nếu tìm thấy)
+        IV-->>Agent: "Xac minh thanh cong ..." hoặc "LOI: ..." (identifier đã che một phần)
 
-        Agent--xBE: (conceptual only — no booking transaction exists)
-        Agent--xNS: (conceptual only — no SMS/Zalo/email sender exists)
+        Agent--xBE: (chỉ mang tính khái niệm — chưa có giao dịch đặt lịch thật)
+        Agent--xNS: (chỉ mang tính khái niệm — chưa có bộ gửi SMS/Zalo/email)
     end
 ```
