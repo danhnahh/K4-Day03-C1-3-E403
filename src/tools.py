@@ -2,10 +2,11 @@
 🛠️ TOOL REGISTRY & SCHEMAS (Dành cho Role 2: Tool & Spec Engineer)
 Chủ đề nhóm: 🏥 ĐẶT LỊCH KHÁM BỆNH & TƯ VẤN CHUYÊN KHOA
 
-⚠️ TRẠNG THÁI: MỐC 2 (Tool Specs) — đã chuẩn hoá DOCSTRING theo tool contract
-   8 trường (Name · Purpose · Input · Output · Error · Side-effect · Example ·
-   Safety) cho cả 4 tool. Phần LOGIC THẬT (dữ liệu mock, validate, xử lý lỗi an
-   toàn) sẽ được cài đặt ở MỐC 3. Hiện thân hàm vẫn trả placeholder [TODO Mốc 3].
+✅ TRẠNG THÁI: MỐC 3 (ReAct Loop & Safeguards)
+   - Docstring chuẩn 8 trường contract (từ Mốc 2).
+   - Đã bọc try/except + validate input cho cả 4 tool.
+   - Khi gặp lỗi → trả chuỗi "LỖI: ..." chứ KHÔNG raise exception.
+   - Logic nghiệp vụ (mock data, tra cứu) sẽ bổ sung sau.
 
 ⚠️ BẢO MẬT: Toàn bộ dữ liệu bệnh nhân/lịch/SĐT/CCCD/BHYT trong file này là
    DỮ LIỆU GIẢ LẬP (MOCK). Tuyệt đối KHÔNG nhập PII thật và KHÔNG commit PII thật.
@@ -49,8 +50,20 @@ def detect_emergency(symptom: str) -> str:
     Returns:
         str: Chuỗi bắt đầu bằng "EMERGENCY=TRUE|FALSE" hoặc "LỖI: ...".
     """
-    # TODO (Mốc 3): danh sách từ khóa nguy hiểm + trả cờ EMERGENCY=TRUE/FALSE
-    return "[TODO Mốc 3] detect_emergency chưa được cài đặt."
+    try:
+        # --- Validate input ---
+        if symptom is None:
+            return "LỖI: Tham số 'symptom' không được để trống (None)."
+        if not isinstance(symptom, str):
+            return "LỖI: Tham số 'symptom' phải là chuỗi (str)."
+        symptom_clean = symptom.strip()
+        if not symptom_clean:
+            return "LỖI: Tham số 'symptom' không được để trống."
+
+        # TODO: Bổ sung logic quét từ khóa nguy hiểm + trả cờ EMERGENCY=TRUE/FALSE
+        return "[TODO] detect_emergency — logic chưa được cài đặt."
+    except Exception as e:
+        return f"LỖI: Lỗi không xác định trong detect_emergency — {e}"
 
 
 def map_symptom_to_specialty(symptom: str) -> str:
@@ -79,8 +92,23 @@ def map_symptom_to_specialty(symptom: str) -> str:
     Returns:
         str: Tên chuyên khoa gợi ý kèm lý do + miễn trừ, hoặc "LỖI: ...".
     """
-    # TODO (Mốc 3): bảng ánh xạ triệu chứng ↔ chuyên khoa (đã y khoa duyệt)
-    return "[TODO Mốc 3] map_symptom_to_specialty chưa được cài đặt."
+    try:
+        # --- Validate input ---
+        if symptom is None:
+            return "LỖI: Tham số 'symptom' không được để trống (None)."
+        if not isinstance(symptom, str):
+            return "LỖI: Tham số 'symptom' phải là chuỗi (str)."
+        symptom_clean = symptom.strip()
+        if len(symptom_clean) < 2:
+            return (
+                "LỖI: Mô tả triệu chứng quá ngắn. Vui lòng mô tả rõ hơn "
+                "(vị trí đau, biểu hiện cụ thể, thời gian) để gợi ý khoa khám chính xác."
+            )
+
+        # TODO: Bổ sung bảng ánh xạ triệu chứng ↔ chuyên khoa + logic tra cứu
+        return "[TODO] map_symptom_to_specialty — logic chưa được cài đặt."
+    except Exception as e:
+        return f"LỖI: Lỗi không xác định trong map_symptom_to_specialty — {e}"
 
 
 def lookup_doctor_schedule(specialty: str, date: str) -> str:
@@ -113,8 +141,19 @@ def lookup_doctor_schedule(specialty: str, date: str) -> str:
     Returns:
         str: Danh sách bác sĩ + slot trống, hoặc "LỖI: ...".
     """
-    # TODO (Mốc 3): dữ liệu mock bác sĩ + slot; validate khoa & ngày
-    return "[TODO Mốc 3] lookup_doctor_schedule chưa được cài đặt."
+    try:
+        # --- Validate specialty ---
+        if specialty is None or not isinstance(specialty, str) or not specialty.strip():
+            return "LỖI: Tên chuyên khoa không được để trống."
+
+        # --- Validate date ---
+        if date is None or not isinstance(date, str) or not date.strip():
+            return "LỖI: Ngày khám không được để trống. Vui lòng nhập theo định dạng dd/mm/yyyy hoặc yyyy-mm-dd."
+
+        # TODO: Bổ sung dữ liệu bác sĩ + slot; validate khoa & ngày chi tiết
+        return "[TODO] lookup_doctor_schedule — logic chưa được cài đặt."
+    except Exception as e:
+        return f"LỖI: Lỗi không xác định trong lookup_doctor_schedule — {e}"
 
 
 def verify_patient_identity(identifier: str, id_type: str = "phone") -> str:
@@ -145,8 +184,26 @@ def verify_patient_identity(identifier: str, id_type: str = "phone") -> str:
     Returns:
         str: Kết quả xác minh (đã che bớt số), hoặc "LỖI: ...".
     """
-    # TODO (Mốc 3): hồ sơ bệnh nhân mock + validate định dạng + masking PII
-    return "[TODO Mốc 3] verify_patient_identity chưa được cài đặt."
+    try:
+        # --- Validate id_type ---
+        valid_types = ("phone", "cccd", "bhyt")
+        if id_type is None or not isinstance(id_type, str):
+            return f"LỖI: Loại định danh (id_type) phải là chuỗi. Giá trị hợp lệ: {', '.join(valid_types)}."
+        id_type_clean = id_type.strip().lower()
+        if id_type_clean not in valid_types:
+            return f"LỖI: Loại định danh '{id_type}' không hợp lệ. Giá trị hợp lệ: {', '.join(valid_types)}."
+
+        # --- Validate identifier ---
+        if identifier is None or not isinstance(identifier, str):
+            return "LỖI: Số định danh (identifier) không được để trống và phải là chuỗi."
+        id_clean = identifier.strip()
+        if not id_clean:
+            return "LỖI: Số định danh (identifier) không được để trống."
+
+        # TODO: Bổ sung hồ sơ bệnh nhân mock + validate định dạng chi tiết + masking PII
+        return "[TODO] verify_patient_identity — logic chưa được cài đặt."
+    except Exception as e:
+        return f"LỖI: Lỗi không xác định trong verify_patient_identity — {e}"
 
 
 # Danh sách các tool được đăng ký để Agent (Role 4) sử dụng
