@@ -17,10 +17,35 @@
 
 ## 🔍 2. SO SÁNH PHẢN HỒI (TEST CASE #3)
 
-**Câu hỏi**: *"Thời tiết ở Hà Nội hôm nay thế nào và tôi nên mặc gì đi chơi?"*
+**Câu hỏi**: *"Tôi thấy mệt mỏi, chán ăn và sụt cân trong 2 tuần qua, không biết nên khám ở đâu."*
 
 ### 🤖 Chatbot Baseline:
-* **Phản hồi**: *"Tôi không có truy cập Internet thời gian thực nên không biết thời tiết hôm nay ở Hà Nội."*
+* **Phản hồi**: *"Chào bạn, rất chia sẻ với tình trạng sức khỏe hiện tại của bạn.
+
+Việc cơ thể mệt mỏi, chán ăn và sụt cân không rõ nguyên nhân trong 2 tuần là những dấu hiệu cảnh báo cơ thể bạn đang gặp vấn đề, có thể liên quan đến nhiều cơ quan khác nhau như hệ tiêu hóa, nội tiết, hoặc suy nhược cơ thể.
+
+Vì tôi là chatbot hỗ trợ thông tin, tôi xin gợi ý lộ trình để bạn đi khám như sau:
+
+### 1. Bạn nên khám chuyên khoa nào?
+Tùy vào tình trạng cụ thể, bạn có thể cân nhắc các chuyên khoa sau:
+*   **Khoa Nội tổng quát:** Đây là nơi tốt nhất để bắt đầu. Bác sĩ sẽ thăm khám lâm sàng, đánh giá tổng thể và chỉ định các xét nghiệm cơ bản (như xét nghiệm máu, chức năng gan, thận, đường huyết, tuyến giáp...) để tìm nguyên nhân gốc rễ.
+*   **Khoa Tiêu hóa:** Nếu bạn cảm thấy chán ăn đi kèm các triệu chứng như đầy hơi, đau bụng, hoặc thay đổi thói quen đại tiện.
+*   **Khoa Nội tiết:** Nếu bạn có thêm các triệu chứng như run tay, hồi hộp, vã mồ hôi hoặc nghi ngờ các vấn đề về chuyển hóa (như tiểu đường hoặc tuyến giáp).
+
+### 2. Gợi ý nơi khám bệnh
+Tại Việt Nam, bạn có thể lựa chọn các địa chỉ uy tín sau:
+*   **Tại các bệnh viện công lập:** Bệnh viện Đại học Y Dược, Bệnh viện Chợ Rẫy (TP.HCM), Bệnh viện Bạch Mai, Bệnh viện Đại học Y Hà Nội (Hà Nội). Đây là những nơi có chuyên môn cao và đầy đủ thiết bị chẩn đoán.
+*   **Tại các bệnh viện/phòng khám đa khoa tư nhân uy tín:** Nếu bạn muốn tiết kiệm thời gian chờ đợi, các bệnh viện như Vinmec, Hồng Ngọc, Tâm Anh hoặc các phòng khám đa khoa quốc tế có hệ thống đặt lịch trước rất thuận tiện.
+
+### 3. Lời khuyên trước khi đi khám
+Để bác sĩ chẩn đoán chính xác nhất, bạn hãy chuẩn bị thông tin sau:
+*   **Ghi chú lại:** Mức cân nặng bạn đã sụt là bao nhiêu kg? Bạn có bị sốt về chiều không? Có khó ngủ hay căng thẳng tâm lý gần đây không?
+*   **Nhịn ăn sáng:** Khi đi khám, tốt nhất bạn nên **nhịn ăn sáng** (chỉ uống nước lọc) để sẵn sàng lấy máu xét nghiệm nếu bác sĩ yêu cầu.
+*   **Mang theo:** Các loại thuốc hoặc thực phẩm chức năng bạn đang sử dụng (nếu có).
+
+**Lưu ý quan trọng:** Nếu bạn xuất hiện các triệu chứng như khó thở, đau ngực dữ dội, nôn ra máu hoặc ngất xỉu, hãy đến ngay **Phòng cấp cứu** của bệnh viện gần nhất, không nên chờ đợi.
+
+Bạn có muốn tôi hướng dẫn thêm về cách mô tả triệu chứng với bác sĩ để cuộc thăm khám đạt hiệu quả cao nhất không? Chúc bạn sớm tìm ra nguyên nhân và phục hồi sức khỏe!"*
 * **Nhận xét**: An toàn nhưng không giải quyết được nhu cầu thực tế của người dùng.
 
 ### 🧠 ReAct Agent:

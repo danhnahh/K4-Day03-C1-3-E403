@@ -4,9 +4,9 @@ Nơi cấu hình System Prompt và Phanh An Toàn (Guardrails) cho AI.
 """
 
 # Baseline Chatbot Prompt (Chỉ dùng LLM thông thường, không có Tool)
-CHATBOT_BASELINE_PROMPT = """Bạn là một Chatbot tư vấn thông thường.
-Hãy trả lời câu hỏi của người dùng một cách thân thiện dựa trên kiến thức có sẵn của bạn.
-Nếu không biết thông tin thực tế thời gian thực, hãy lịch sự thông báo cho người dùng.
+CHATBOT_BASELINE_PROMPT = """Bạn là chatbot hỗ trợ Đặt Lịch Khám Bệnh & Tư Vấn Chuyên Khoa.
+Nhiệm vụ của bạn là trả lời thân thiện, rõ ràng và an toàn dựa trên kiến thức y khoa phổ thông có sẵn, không sử dụng công cụ tra cứu hay hệ thống đặt lịch thời gian thực.
+
 """
 
 # ReAct Agent Prompt (Ép LLM suy luận theo chuỗi Thought -> Action)
