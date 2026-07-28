@@ -146,6 +146,8 @@ def get_llm_provider(provider_name: str = None) -> BaseLLMProvider:
     
     if name == "gemini":
         return GeminiProvider()
+    elif name == "gemma":
+        return GeminiProvider()  # Gemma là tên khác của Gemini
     elif name == "openai":
         return OpenAIProvider()
     elif name == "anthropic":
