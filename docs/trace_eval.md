@@ -49,9 +49,17 @@ Bạn có muốn tôi hướng dẫn thêm về cách mô tả triệu chứng v
 * **Nhận xét**: An toàn nhưng không giải quyết được nhu cầu thực tế của người dùng.
 
 ### 🧠 ReAct Agent:
-* **Thought 1**: Cần tra cứu thời tiết Hà Nội.
-* **Action 1**: `get_weather['Hà Nội']`
-* **Observation 1**: `Thời tiết Hà Nội: 28°C, Nắng nhẹ, Độ ẩm 65%.`
-* **Thought 2**: Đã có thông tin 28°C nắng nhẹ, đưa ra lời khuyên trang phục.
-* **Final Answer**: *"Thời tiết Hà Nội hôm nay 28°C, nắng nhẹ. Bạn nên mặc quần áo thoáng mát!"*
-* **Nhận xét**: Hoàn thành xuất sắc nhiệm vụ nhờ sự kết hợp giữa suy luận và công cụ.
+* --- Step 1/8 ---
+* Thought: Tôi cần kiểm tra xem các triệu chứng mệt mỏi, chán ăn và sụt cân của người dùng có dấu hiệu cấp cứu hay không.
+* Action: detect_emergency["mệt mỏi, chán ăn, sụt cân"]
+* Observation: EMERGENCY=FALSE | Chua phat hien dau hieu cap cuu trong mo ta. Co the tiep tuc tu van dat lich thuong.
+
+* --- Step 2/8 ---
+* Thought: Vì không có dấu hiệu cấp cứu, tôi cần xác định chuyên khoa phù hợp dựa trên triệu chứng của người dùng.
+* Action: map_symptom_to_specialty["mệt mỏi, chán ăn, sụt cân"]
+* Observation: Chuyen khoa goi y: Nội tổng quát. Ly do: mo ta co cac dau hieu lien quan: mệt mỏi, chán ăn, sụt cân. Day la goi y khoa kham, khong thay the chan doan bac si.
+
+* --- Step 3/8 ---
+* Thought: Tôi đã có thông tin về chuyên khoa phù hợp là Nội tổng quát từ các quan sát trước đó. Để có thể hỗ trợ bạn kiểm tra lịch trống và đặt lịch khám, tôi cần biết ngày bạn dự định đến khám.
+
+* Final Answer: Dựa trên các triệu chứng mệt mỏi, chán ăn và sụt cân mà bạn mô tả, bạn nên đăng ký khám tại chuyên khoa **Nội tổng quát**. Để tôi có thể kiểm tra lịch trống của bác sĩ và hỗ trợ bạn đặt lịch, vui lòng cho biết bạn muốn khám vào ngày nào?
