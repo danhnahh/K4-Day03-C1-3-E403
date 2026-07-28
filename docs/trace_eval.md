@@ -49,17 +49,20 @@ Bạn có muốn tôi hướng dẫn thêm về cách mô tả triệu chứng v
 * **Nhận xét**: An toàn nhưng không giải quyết được nhu cầu thực tế của người dùng.
 
 ### 🧠 ReAct Agent:
-* --- Step 1/8 ---
+ --- Step 1/8 ---
 * Thought: Tôi cần kiểm tra xem các triệu chứng mệt mỏi, chán ăn và sụt cân của người dùng có dấu hiệu cấp cứu hay không.
 * Action: detect_emergency["mệt mỏi, chán ăn, sụt cân"]
 * Observation: EMERGENCY=FALSE | Chua phat hien dau hieu cap cuu trong mo ta. Co the tiep tuc tu van dat lich thuong.
 
-* --- Step 2/8 ---
+  --- Step 2/8 ---
 * Thought: Vì không có dấu hiệu cấp cứu, tôi cần xác định chuyên khoa phù hợp dựa trên triệu chứng của người dùng.
 * Action: map_symptom_to_specialty["mệt mỏi, chán ăn, sụt cân"]
 * Observation: Chuyen khoa goi y: Nội tổng quát. Ly do: mo ta co cac dau hieu lien quan: mệt mỏi, chán ăn, sụt cân. Day la goi y khoa kham, khong thay the chan doan bac si.
 
-* --- Step 3/8 ---
+ --- Step 3/8 ---
 * Thought: Tôi đã có thông tin về chuyên khoa phù hợp là Nội tổng quát từ các quan sát trước đó. Để có thể hỗ trợ bạn kiểm tra lịch trống và đặt lịch khám, tôi cần biết ngày bạn dự định đến khám.
 
 * Final Answer: Dựa trên các triệu chứng mệt mỏi, chán ăn và sụt cân mà bạn mô tả, bạn nên đăng ký khám tại chuyên khoa **Nội tổng quát**. Để tôi có thể kiểm tra lịch trống của bác sĩ và hỗ trợ bạn đặt lịch, vui lòng cho biết bạn muốn khám vào ngày nào?
+
+**Nhận xét:** ReAct Agent thể hiện quy trình xử lý có cấu trúc và bám sát mục tiêu của bài toán hơn so với chatbot thông thường. Thay vì đưa ra một câu trả lời dài dựa hoàn toàn vào kiến thức của LLM, Agent thực hiện từng bước suy luận kết hợp với các công cụ chuyên biệt.
+
