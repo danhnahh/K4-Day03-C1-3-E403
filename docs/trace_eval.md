@@ -7,11 +7,11 @@
 
 | Tiêu chí | Điểm (1-5) | Lý do đánh giá |
 | :--- | :---: | :--- |
-| 🧠 **Multi-step Reasoning** | `4/5` | Cần suy luận từ tra cứu thời tiết đến chọn trang phục. |
-| 🛠️ **Tool Interaction** | `5/5` | Cần tra cứu dữ liệu thời gian thực qua API thời tiết/chuyến bay. |
-| 🔀 **Dynamic Decision** | `4/5` | Kết quả bước trước quyết định hành động bước sau. |
-| ⏳ **Long Horizon** | `3/5` | Quy trình gồm 2-3 bước xử lý ngắn. |
-| **TỔNG ĐIỂM FIT** | **16/20** | **KẾT LUẬN: BÀI TOÁN RẤT NÊN DÙNG REACT AGENT!** |
+| 🧠 **Multi-step Reasoning** | `5/5` | Agent phải suy luận qua nhiều bước: hiểu triệu chứng → kiểm tra dấu hiệu cấp cứu → đặt câu hỏi làm rõ → xác định chuyên khoa phù hợp → xác nhận với bệnh nhân → tra cứu lịch → xác thực danh tính → đặt lịch. Mỗi bước phụ thuộc vào thông tin thu thập ở bước trước. |
+| 🛠️ **Tool Interaction** | `5/5` | Agent cần phối hợp nhiều công cụ chuyên biệt như Emergency Detector, Symptom-to-Specialty Mapper, Doctor/Schedule Lookup, Patient Identity Verification, Booking Engine, Notification Service và Human Escalation. Hầu hết quyết định nghiệp vụ đều phải thông qua tool, không thể dựa vào LLM thuần túy.|
+| 🔀 **Dynamic Decision** | `4/5` | Luồng xử lý thay đổi liên tục theo ngữ cảnh hội thoại và kết quả từ các tool. Ví dụ: phát hiện cấp cứu thì dừng toàn bộ quy trình đặt lịch để chuyển cấp cứu; thiếu thông tin thì hỏi tiếp; không còn lịch thì đề xuất khung giờ khác; người dùng yêu cầu gặp nhân viên thì chuyển tiếp ngay. |
+| ⏳ **Long Horizon** | `3/5` | Đây là quy trình nhiều bước với trạng thái hội thoại kéo dài. Agent phải ghi nhớ ngữ cảnh, quản lý thông tin bệnh nhân, phối hợp nhiều tool và xử lý các nhánh khác nhau cho đến khi hoàn tất đặt lịch hoặc chuyển tiếp sang nhân viên. |
+| **TỔNG ĐIỂM FIT** | **17/20** | **KẾT LUẬN: BÀI TOÁN RẤT NÊN DÙNG REACT AGENT!** |
 
 ---
 
