@@ -30,8 +30,6 @@ Mục tiêu phụ của dự án (thể hiện qua cách trình bày bài lab tr
 | Adapter LLM đa nhà cung cấp (Gemini/OpenAI/Anthropic/OpenRouter/Mock) | `src/providers.py` |
 | Mô phỏng offline xác định cho trace ReAct | `_build_fallback_step` trong `src/app.py`, được `MockProvider` tự động sử dụng |
 
-**Chưa triển khai** (không tồn tại dưới dạng code, chỉ là văn bản agent sinh ra hoặc hành vi mục tiêu được mô tả trong `config/test_cases.json`): một giao dịch đặt lịch/giữ chỗ thật, một bộ gửi thông báo SMS/Zalo/email, một kênh chuyển tiếp trực tiếp sang nhân viên thật, tích hợp Hệ thống Thông tin Bệnh viện (HIS) thật, logic hủy/đổi lịch, và liên kết danh tính nhiều bệnh nhân (đặt hộ người thân). Khi agent hiện tại nói "vui lòng cung cấp SĐT/CCCD/BHYT để xác nhận" hoặc "gọi 115", đó là điểm kết thúc của luồng tự động — không có hệ thống downstream nào thực sự được gọi.
-
 ## 3. Hành trình người dùng (theo cài đặt hiện tại)
 
 Điểm vào duy nhất hiện nay là khối `__main__` của `src/app.py`, nơi nạp `config/test_cases.json` và chạy từng câu hỏi qua cả `run_baseline_chatbot` lẫn `run_react_agent`, in trace ra console. Chưa có giao diện web/API/chat-widget nào — "Giao diện chat" trong các sơ đồ bên dưới đại diện cho console runner này (hoặc, về mặt khái niệm, bất kỳ kênh nào tổng đài sẽ dùng trong thực tế).
@@ -46,71 +44,12 @@ Mục tiêu phụ của dự án (thể hiện qua cách trình bày bài lab tr
 
 ## 4. Trách nhiệm của AI Agent
 
-"Agent" ở đây là logic điều phối trong `run_react_agent` (`src/app.py`), không phải bản thân LLM:
-
 - Chạy các bộ lọc guardrail trước khi cho phép bất kỳ suy luận nào diễn ra.
 - Điều khiển vòng lặp Thought→Action→Observation tối đa `MAX_ITERATIONS` bước.
 - Phân tích dòng `Action: tool_name[args]` của model bằng regex nghiêm ngặt (`_parse_action`) và từ chối bất cứ thứ gì không khớp.
 - Kiểm tra xem output của một provider thật có thực sự giống một bước ReAct hợp lệ hay không (`_looks_like_react_response`); nếu không, bỏ output của LLM và thay bằng một bước xác định từ `_build_fallback_step`, để một lượt sinh sai định dạng không bao giờ làm hỏng vòng lặp.
 - Điều phối lệnh gọi tool đã phân tích đến `AVAILABLE_TOOLS` và đưa chuỗi trả về làm `Observation` tiếp theo.
 - Kết thúc vòng lặp ngay khi xuất hiện `Final Answer:`, hoặc sau khi đạt giới hạn số vòng lặp.
-
-## 5. Trách nhiệm của LLM
-
-Khi một provider thật (Gemini/OpenAI/Anthropic/OpenRouter) được cấu hình qua `LLM_PROVIDER` trong `.env`:
-
-- Đọc `REACT_SYSTEM_PROMPT` (`src/prompts.py`), liệt kê 4 tool khả dụng, cú pháp gọi của chúng, và các luật bắt buộc (gọi `detect_emergency` trước, không bao giờ tự bịa lịch, không bao giờ chẩn đoán/kê đơn, chuyển hướng cấp cứu khi `EMERGENCY=TRUE`, giới hạn `id_type` chỉ trong `phone|cccd|bhyt`).
-- Ở mỗi lượt, chỉ sinh ra **đúng một** cặp `Thought` + `Action`, hoặc một cặp `Thought` + `Final Answer` — không bao giờ cả hai, không bao giờ tự bịa một `Observation`.
-- Quyết định, dựa trên các observation đã tích lũy, bước tiếp theo duy nhất nên là gì (tool nào, tham số nào, hay đã đủ bằng chứng để trả lời).
-
-Khi `LLM_PROVIDER=mock` (giá trị mặc định, và là thứ thực sự chạy `config/test_cases.json` ở chế độ offline), LLM được thay thế hoàn toàn bằng `MockProvider`, và mọi bước "suy luận" thay vào đó đến từ hàm xác định `_build_fallback_step` — điều này đảm bảo bộ test case của bài lab luôn cho kết quả lặp lại được mà không cần bất kỳ API key nào.
-
-## 6. Trách nhiệm của Tool
-
-Xem bảng đầy đủ ở mục 7 của `README.md`. Tóm lại, mỗi tool trong `src/tools.py` là một hàm thuần (pure function) tự kiểm tra tham số của chính nó, tra cứu dữ liệu tĩnh từ `config/mock_data.py`, và trả về một chuỗi văn bản — hoặc thông báo lỗi `LOI: ...`, hoặc mô tả kết quả. Các tool không bao giờ gọi lẫn nhau và không bao giờ chạm vào LLM.
-
-## 7. Trách nhiệm của Guardrail
-
-Guardrail tồn tại ở ba tầng riêng biệt, và không tầng nào phụ thuộc vào việc LLM "tự giác":
-
-1. **Chặn cứng trước vòng lặp** (`run_react_agent`, trước khi vòng lặp bắt đầu): danh sách từ khóa con cho yêu cầu prompt-injection / dữ liệu bệnh nhân khác, yêu cầu chẩn đoán/kê đơn thuốc, và lời chào. Các chặn này kích hoạt bất kể LLM provider nào đang được cấu hình.
-2. **Hành vi xác định trong vòng lặp**: `detect_emergency` luôn là action đầu tiên khi chưa có observation nào; một observation `EMERGENCY=TRUE` luôn kết thúc vòng lặp bằng thông báo chuyển hướng cấp cứu thay vì tiếp tục định tuyến chuyên khoa.
-3. **Guardrail cấu trúc/định dạng**: regex của `_parse_action` từ chối bất cứ thứ gì không có dạng `Action: tool_name[args]`; `_looks_like_react_response` từ chối các phản hồi văn bản tự do của LLM bỏ qua các nhãn bắt buộc và thay bằng một bước fallback xác định; `MAX_ITERATIONS = 8` giới hạn vòng lặp và in ra thông báo guardrail rõ ràng nếu bị vượt quá.
-4. **Guardrail bảo vệ dữ liệu riêng tư**: `_mask_identifier` trong `src/tools.py` che toàn bộ số điện thoại/CCCD/BHYT trừ 4 ký tự cuối trước khi hiển thị lại trong một `Observation`.
-
-## 8. Hệ thống bên ngoài (External Systems)
-
-Hiện tại **không có hệ thống bên ngoài** nào được tích hợp ngoài chính các API của LLM provider:
-
-- `config/mock_data.py` là một cấu trúc in-memory, tĩnh, đóng vai trò thay thế tạm cho một Hệ thống Thông tin Bệnh viện thật (danh bạ bác sĩ, lịch khám, danh sách bệnh nhân, bảng từ khóa triệu chứng/cấp cứu). Nó được nạp như một import Python thông thường — không có database, không có lệnh gọi mạng, không có lưu trữ bền vững.
-- `src/providers.py` gọi ra các API HTTP của Gemini / OpenAI / Anthropic / OpenRouter (hoặc không gọi gì cả, ở chế độ Mock).
-- Chưa có cổng gửi thông báo (SMS/Zalo/email), chưa có database đặt lịch thật, và chưa có tích hợp tổng đài/viễn thông.
-
-## 9. Luồng dữ liệu & Vòng đời Request (Data Flow & Request Lifecycle)
-
-```
-chuỗi câu hỏi
-  → _normalize / _plain (src/app.py)
-  → khớp từ khóa guardrail trước vòng lặp?  → có → Final Answer (từ chối/điều hướng) → KẾT THÚC
-  → không
-  → vòng lặp (1..MAX_ITERATIONS):
-       provider.generate(REACT_SYSTEM_PROMPT, history)   [hoặc _build_fallback_step nếu là MockProvider / output sai định dạng]
-       → có "Final Answer:"?  → có → in ra → KẾT THÚC
-       → _parse_action → (tool_name, args)
-       → không phân tích được tool_name → Final Answer (lỗi chung) → KẾT THÚC
-       → AVAILABLE_TOOLS[tool_name](*args)  [tools.py đọc config/mock_data.py]
-       → chuỗi Observation được thêm vào lịch sử, vòng lặp tiếp tục
-  → hết vòng lặp mà chưa có Final Answer → in "Guardrail: đã đạt giới hạn tối đa N bước" → KẾT THÚC
-```
-
-## 10. Vì sao dự án này dùng kiến trúc ReAct Agent
-
-`docs/trace_eval.md` chấm bài toán này 17/20 trên ma trận Agentic Fit, và code củng cố điều đó về mặt cấu trúc:
-
-- **Suy luận nhiều bước là bắt buộc, không phải tùy chọn.** Một câu trả lời đúng đòi hỏi phải nối chuỗi sàng lọc cấp cứu → ánh xạ chuyên khoa → tra lịch → xác minh danh tính, trong đó *đầu vào* của mỗi bước phụ thuộc vào *Observation của bước trước*. Một lượt sinh văn bản LLM đơn lẻ không thể làm được điều này vì nó không có cách nào để tra cứu tên bác sĩ thật, khung giờ thật, hay hồ sơ bệnh nhân thật — nó chỉ có thể đoán, và việc đoán mò về định tuyến/lịch khám y tế chính là kiểu thất bại mà dự án này đang phòng ngừa (xem ngôn ngữ tường minh trong `map_symptom_to_specialty` và `lookup_doctor_schedule`: "day chi la goi y, khong thay the chan doan bac si" / "khong duoc tu bia lich", và trong system prompt: "Không được tự bịa lịch nếu chưa gọi tool này").
-- **Căn cứ vào tool là yêu cầu an toàn, không phải sự tiện lợi.** Vì lĩnh vực này là y tế, một lịch khám bị ảo giác hoặc một dấu hiệu cấp cứu bị bỏ sót đều có hậu quả thực tế. Vòng lặp ReAct buộc mọi khẳng định mang tính sự kiện (chuyên khoa, lịch khám, danh tính) phải bắt nguồn từ một lệnh gọi tool xác định, mà orchestrator — chứ không phải LLM — là bên thêm kết quả đó vào transcript.
-- **Việc rẽ nhánh mang tính động và phụ thuộc nội dung.** Bước hành động tiếp theo là "hỏi thêm chi tiết", "gọi `lookup_doctor_schedule`", hay "chuyển hướng gọi 115" hoàn toàn phụ thuộc vào nội dung văn bản của `Observation` trước đó — đây chính xác là mẫu hình `Thought → Action → Observation → Thought → ...` mà ReAct được thiết kế để giải quyết, và cũng là lý do chatbot nền (`run_baseline_chatbot`, không có tool) được giữ lại trong codebase như một ví dụ đối chứng có chủ đích.
-- **Guardrail cần một chỗ để can thiệp.** Một lượt sinh chatbot một-lần-duy-nhất không có điểm trung gian nào để chèn một luật cứng; một vòng lặp với các bước rời rạc cho orchestrator một chỗ để kiểm tra mỗi `Observation` xem có `EMERGENCY=TRUE` hay không, giới hạn số vòng lặp, và xác thực định dạng output trước khi nó được hiển thị cho người dùng.
 
 ---
 
